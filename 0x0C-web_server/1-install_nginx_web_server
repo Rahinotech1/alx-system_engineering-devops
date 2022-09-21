@@ -2,5 +2,5 @@
 # script to install and setup nginx
 apt-get -y update
 apt-get -y install nginx
-echo 'Best School' > /usr/share/nginx/html/index.html
+echo 'Hello World!' > /usr/share/nginx/html/index.html
 service nginx start
