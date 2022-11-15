@@ -1,27 +1,27 @@
 #!/usr/bin/python3
-"""Function to recursively GET all the hot posts of a give subreddit"""
-from requests import get
+"""queries the Reddit API"""
+import requests
+
+
+after = ""
 
 
 def recurse(subreddit, hot_list=[]):
-    """Recursively GET all the hot posts of `subreddit`"""
-    r = get("https://www.reddit.com/r/{}/hot.json".format(subreddit),
-            params={"raw_json": 1, "g": "GLOBAL", "after": after},
-            headers={"User-Agent": "Andrew from Holberton"},
-            allow_redirects=False)
-    try:
-        r.raise_for_status()
-    except:
+    """returns list with titles and articles"""
+    global after
+    header = {"User-Agent": "Holberton"}
+    url = "https://www.reddit.com/r/" + subreddit + "/hot.json"
+    if after:
+        url = url + "?after=" + after
+    r = requests.get(url, headers=header, allow_redirects=False)
+    if r.status_code != 200:
         return None
-    else:
-        try:
-            children = r.json().get('data').get('children')
-            hot_posts.extend(map(lambda c: c.get('data').get('title'),
-                                 children))
-            after = r.json().get('data').get('after')
-            if after is None:
-                return hot_posts
-            else:
-                return recurse(subreddit, hot_posts, after=after)
-        except:
-            return None
+    after = r.json().get("after", "")
+    for i in r.json().get("data", None).get("children", None):
+        hot_list.append(i.get("data", None).get("title", None))
+    if after:
+        return recurse(subreddit, hot_list)
+    return hot_list
+
+if __name__ == "__main__":
+    pass
