@@ -7,8 +7,3 @@ service { 'nginx':
     ensure    => running,
     subscribe => Exec['fixer'],
 }
-Footer
-© 2022 GitHub, Inc.
-Footer navigation
-Terms
-Priva
