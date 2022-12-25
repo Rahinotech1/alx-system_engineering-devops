@@ -1,35 +1,9 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC2016
-# Set up new nginx server and add custom response header
-# with hostname in new nginx configuration.
+#to configure a new server
 
-apt-get update -y && \
-apt-get install -y nginx && \
-echo -e \
-'http {
-    add_header X-Served-By $hostname;
-    root /var/www/holberton;
-    server {
-        listen 80;
-        server_name pearmountain.space;
-        error_page 404 /404_file_not_found.html;
-        rewrite ^/redirect_me/? https://www.youtube.com/watch?v=QH2-TGUlwu4 permanent;
-        location / {
-            index index.html;
-        }
-        location /404_file_not_found.html {
-            internal;
-        }
-    }
-}
-events {
-}' > /etc/nginx/nginx.conf
-
-mkdir -p /var/www/holberton
-
-echo "Holberton School" > \
-    /var/www/holberton/index.html
-echo "Ceci n'est pas une page" > \
-    /var/www/holberton/404_file_not_found.html
-
-service nginx restart
+sudo apt-get update
+sudo apt-get -y install nginx
+sudo service nginx start
+sudo sed -i "11i\\\tadd_header X-Served-By $HOSTNAME;" /etc/nginx/nginx.conf
+echo "Hello World!" | sudo tee /usr/share/nginx/html/index.html
+sudo service nginx restart
