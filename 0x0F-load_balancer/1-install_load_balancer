@@ -1,44 +1,11 @@
 #!/usr/bin/env bash
-# script for configuring HAProxy load balancer server
-MY_ID=7857
-CONFIG_FILE=/etc/haproxy/haproxy.cfg
-INPUT_LINE="
-frontend haproxynode
-        bind *:80
-        mode http
-        default_backend backendnodes
-backend backendnodes
-        balance roundrobin
-        option forwardfor # ensure forwarded request includes cleint ip
-        server 7857-web-01 107.23.204.86
-        server 7857-web-02 52.91.134.54
-"
+# Install the load balancer
 
-# check if hostname is correct
-if [[ $(hostname) =~ ^$MY_ID-lb-[0-9]+ ]]; then
-    echo 'hostname properly configured'
-else
-    >&2 echo 'hostname not configured properly...'
-    >&2 echo 'please set hostname to pattern: 7857-lb-<server_id>...'
-    >&2 echo 'Example: sudo hostnamectl set-hostname 7857-lb-<insert_server_id_here>'
-fi
 
-# check if HAProxy was previously configured
-if [ "$(grep -o "$INPUT_LINE" $CONFIG_FILE | wc -l)" != 0 ]; then
-	echo 'HAProxy already configured to script specs :)...'
-	# restart HAProxy
-	service haproxy restart
-else
-	# install HAProxy Version 1.8
-	apt-get -y install software-properties-common
-	add-apt-repository -y ppa:vbernat/haproxy-1.8
-	apt-get -y update
-	apt-get -y install haproxy=1.8.\*
-
-	# configure HAProxyd
-
-	printf "%s" "$INPUT_LINE" >> $CONFIG_FILE
-
-	# start HAProxy
-	service haproxy start
-fi
+sudo apt-get -y update
+sudo apt-get -y upgrade
+sudo apt-get -y install haproxy
+sudo sed -i 's/ENABLED=0/ENABLED=1/' /etc/default/haproxy
+sudo cp /etc/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg.original
+sudo sed -i "$ a\listen 540-lb-01\n\tbind *:80\n\tmode http\n\tbalance roundrobin\n\toption httpclose\n\toption forwardfor\n\tserver 7857-web-02 52.91.134.54:80 check\n\tserver 7857-web-01 107.23.204.86:80 check" /etc/haproxy/haproxy.cfg
+sudo service haproxy start
