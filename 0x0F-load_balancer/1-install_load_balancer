@@ -1,26 +1,44 @@
 #!/usr/bin/env bash
-# Install HAproxy on clean ubuntu 14.04 machine and setup to proxy requests
-# between 144-web-01 and 144-web-02.
+# script for configuring HAProxy load balancer server
+MY_ID=7857
+CONFIG_FILE=/etc/haproxy/haproxy.cfg
+INPUT_LINE="
+frontend haproxynode
+        bind *:80
+        mode http
+        default_backend backendnodes
+backend backendnodes
+        balance roundrobin
+        option forwardfor # ensure forwarded request includes cleint ip
+        server 7857-web-01 107.23.204.86
+        server 7857-web-02 52.91.134.54
+"
 
-apt-get update -y && \
-apt-get install -y software-properties-common && \
-add-apt-repository -y ppa:vbernat/haproxy-1.7 && \
-apt-get update -y && \
-apt-get install -y haproxy && \
-if [ -e '/etc/haproxy/haproxy.cfg.orig' ]
-then
-    cat /etc/haproxy/haproxy.cfg.orig > /etc/haproxy/haproxy.cfg
+# check if hostname is correct
+if [[ $(hostname) =~ ^$MY_ID-lb-[0-9]+ ]]; then
+    echo 'hostname properly configured'
 else
-    cp /etc/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg.orig
+    >&2 echo 'hostname not configured properly...'
+    >&2 echo 'please set hostname to pattern: 7857-lb-<server_id>...'
+    >&2 echo 'Example: sudo hostnamectl set-hostname 7857-lb-<insert_server_id_here>'
 fi
-echo -e \
-"\nlisten load_balancer
-\tbind :80
-\tmode http
-\tstats enable
-\tstats uri /haproxy?stats
-\tbalance roundrobin
-\tserver 144-web-01 107.23.204.86 check
-\tserver 144-web-02 52.91.134.54 check" \
-    >> /etc/haproxy/haproxy.cfg
-service haproxy restart
+
+# check if HAProxy was previously configured
+if [ "$(grep -o "$INPUT_LINE" $CONFIG_FILE | wc -l)" != 0 ]; then
+	echo 'HAProxy already configured to script specs :)...'
+	# restart HAProxy
+	service haproxy restart
+else
+	# install HAProxy Version 1.8
+	apt-get -y install software-properties-common
+	add-apt-repository -y ppa:vbernat/haproxy-1.8
+	apt-get -y update
+	apt-get -y install haproxy=1.8.\*
+
+	# configure HAProxyd
+
+	printf "%s" "$INPUT_LINE" >> $CONFIG_FILE
+
+	# start HAProxy
+	service haproxy start
+fi
