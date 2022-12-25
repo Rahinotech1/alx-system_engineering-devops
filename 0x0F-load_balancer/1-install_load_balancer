@@ -20,7 +20,7 @@ echo -e \
 \tstats enable
 \tstats uri /haproxy?stats
 \tbalance roundrobin
-\tserver 144-web-01 142.44.167.235:80 check
-\tserver 144-web-02 144.217.246.199:80 check" \
+\tserver 144-web-01 107.23.204.86 check
+\tserver 144-web-02 52.91.134.54 check" \
     >> /etc/haproxy/haproxy.cfg
 service haproxy restart
